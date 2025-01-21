@@ -5,6 +5,7 @@ import { useQuery } from 'convex/react'
 import React from 'react'
 import Spinner from './Spinner'
 import { CalendarDays, Ticket } from 'lucide-react'
+import EventCard from './EventCard'
 
 const EventList = () => {
     const events = useQuery(api.events.get)

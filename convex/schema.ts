@@ -45,7 +45,7 @@ export default defineSchema({
             v.literal("purchased"),
             v.literal("expired"),
         ),
-        offerExpiredAt: v.optional(v.number()),
+        offerExpiresAt: v.optional(v.number()),
     })
 
     .index("by_event_status",["eventId", "status"])
