@@ -62,22 +62,22 @@ export async function createStripeCheckoutSession({
   // Create Stripe Checkout Session
   const session = await stripe.checkout.sessions.create(
     {
-      payment_method_types: ["card"],
+      payment_method_types: ["card","mobilepay","paypal"],
       line_items: [
         {
           price_data: {
-            currency: "gbp",
+            currency: "dollar",
             product_data: {
               name: event.name,
               description: event.description,
             },
-            unit_amount: Math.round(event.price * 100),
+            unit_amount: Math.round(event.price * 100), //Stripe expects amounts in cents
           },
           quantity: 1,
         },
       ],
       payment_intent_data: {
-        application_fee_amount: Math.round(event.price * 100 * 0.01), //1% fee
+        application_fee_amount: Math.round(event.price * 100 * 0.01), //*1% fee
       },
       expires_at: Math.floor(Date.now() / 1000) + DURATIONS.TICKET_OFFER / 1000, // 30 minutes (stripe checkout minimum expiration time)
       mode: "payment",

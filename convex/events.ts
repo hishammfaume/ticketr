@@ -1,4 +1,4 @@
-import { rateLimiter } from "@convex-dev/rate-limiter/convex.config";
+//import { rateLimiter } from "@convex-dev/rate-limiter/convex.config";
 import { Check } from "lucide-react";
 
 import { query, mutation } from "./_generated/server";

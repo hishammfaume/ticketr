@@ -44,7 +44,8 @@ export default function SellerDashboard() {
   const handleManageAccount = async () => {
     try {
       if (stripeConnectId && accountStatus?.isActive) {
-        const loginUrl = await createStripeConnectLoginLink(stripeConnectId);
+        const response = await createStripeConnectLoginLink(stripeConnectId);
+        const loginUrl = response.url;
         window.location.href = loginUrl;
       }
     } catch (error) {
