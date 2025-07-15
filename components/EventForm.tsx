@@ -382,3 +382,5 @@ const EventForm = ({mode, initialData}: EventFormProps) => {
     </Form>
   );
 }
+
+export default EventForm;
