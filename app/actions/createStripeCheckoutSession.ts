@@ -62,11 +62,11 @@ export async function createStripeCheckoutSession({
   // Create Stripe Checkout Session
   const session = await stripe.checkout.sessions.create(
     {
-      payment_method_types: ["card","mobilepay","paypal"],
+      payment_method_types: ["card"],
       line_items: [
         {
           price_data: {
-            currency: "dollar",
+            currency: "usd",
             product_data: {
               name: event.name,
               description: event.description,

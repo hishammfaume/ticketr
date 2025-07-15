@@ -1,9 +1,9 @@
-import React from 'react'
-import Link from 'next/link';
-import Image from 'next/image';
-import logo from"@/images/logo.png";
-import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
-import SearchBar from './SearchBar';
+import React from "react";
+import Link from "next/link";
+import Image from "next/image";
+import logo from "@/images/logo.png";
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import SearchBar from "./SearchBar";
 const Header = () => {
   return (
     <div className="border-b">
@@ -41,7 +41,7 @@ const Header = () => {
                 </button>
               </Link>
 
-              <Link href="/seller">
+              <Link href="/tickets">
                 <button className="bg-gray-100 text-gray-800 px-3 py-1.5 text-sm rounded-lg hover:bg-gray-200 transition border border-gray-300">
                   My Tickets
                 </button>
@@ -66,8 +66,8 @@ const Header = () => {
                 Sell Tickets
               </button>
             </Link>
-            
-            <Link href="/seller" className="flex-1">
+
+            <Link href="/tickets" className="flex-1">
               <button className="w-full bg-gray-100 text-gray-800 px-3 py-1.5 text-sm rounded-lg hover:bg-gray-200 transition border border-gray-300">
                 My Tickets
               </button>
@@ -77,6 +77,6 @@ const Header = () => {
       </div>
     </div>
   );
-}
+};
 
-export default Header
+export default Header;
