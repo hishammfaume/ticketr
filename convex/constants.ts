@@ -1,5 +1,18 @@
 import { Doc } from "./_generated/dataModel";
 
+// event categories
+export const EVENT_CATEGORIES = {
+    MUSIC: "Music",
+    SPORTS:"Sports",
+    ART:"Art",
+    FILM:"Film",
+    FOOD:"Food & Drink",
+    CONFERENCE:"Conference",
+    WORKSHOP:"Workshop",
+    OTHER:"Other"
+ } as const;
+
+export type EventCategory = typeof EVENT_CATEGORIES[keyof typeof EVENT_CATEGORIES];
 
 //Time constants in milliseconds
 export const DURATIONS = {

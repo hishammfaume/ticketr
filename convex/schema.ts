@@ -1,7 +1,7 @@
 
 import {defineSchema, defineTable} from 'convex/server';
 import {v } from 'convex/values';
-
+import { EVENT_CATEGORIES } from './constants';
 
 export default defineSchema({
     events: defineTable({
@@ -13,8 +13,23 @@ export default defineSchema({
         totalTickets: v.number(),
         userId: v.string(),
         imageStorageId: v.optional(v.id("_storage")),
-        is_cancelled: v.optional(v.boolean())
-    }),
+        is_cancelled: v.optional(v.boolean()),
+        category: v.union(
+            v.literal(EVENT_CATEGORIES.MUSIC),
+            v.literal(EVENT_CATEGORIES.SPORTS),
+            v.literal(EVENT_CATEGORIES.ART),
+            v.literal(EVENT_CATEGORIES.FILM),
+            v.literal(EVENT_CATEGORIES.FOOD),
+            v.literal(EVENT_CATEGORIES.CONFERENCE),
+            v.literal(EVENT_CATEGORIES.WORKSHOP),
+            v.literal(EVENT_CATEGORIES.OTHER)
+        ),
+    })
+    .index("by_user", ["userId"])
+    .index("by_event_date", ["eventDate"])
+    .index("by_category", ["category"])
+    
+    ,
     tickets: defineTable({
         eventId: v.id("events"),
         userId: v.string(),
@@ -29,7 +44,7 @@ export default defineSchema({
         amount: v.number(),
     })
 
-    // create indexes to make seachinf the database faster
+    // create indexes to make seaching the database faster
     .index("by_event", ["eventId"])
     .index("by_user", ["userId"])
     .index("by_user_event", ["userId", "eventId"])

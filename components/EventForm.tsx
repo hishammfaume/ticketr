@@ -12,6 +12,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,50 +32,67 @@ import { Id } from "@/convex/_generated/dataModel";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useStorageUrl } from "@/lib/utils";
+import { EVENT_CATEGORIES } from "@/convex/constants";
 
-  const formSchema = z.object({
-        name: z.string().min(1, "event name is required"),
-        description: z.string().min(1, "event description is required"),
-        location: z.string().min(1, "event location is required"),
-        eventDate: z
-          .date()
-          .min(
-            new Date(new Date().setHours(0, 0, 0, 0)),
-            "event date must be in the future"
-          ),
-          price: z.number().min(0, "price must be  0 or greater"),
-          totalTickets: z.number().min(1, "total tickets must be 1 or greater"),
-    })
-
-    type FormData = z.infer<typeof formSchema>
-
-    interface InitialEventData {
-        _id: Id<"events">;
-        name: string;
-        description: string;
-        location: string;
-        eventDate: number;
-        price: number;
-        totalTickets: number;
-        imageStorageId?: Id<"_storage">
+const formSchema = z.object({
+  name: z.string().min(1, "event name is required"),
+  description: z.string().min(1, "event description is required"),
+  location: z.string().min(1, "event location is required"),
+  eventDate: z
+    .date()
+    .min(
+      new Date(new Date().setHours(0, 0, 0, 0)),
+      "event date must be in the future"
+    ),
+  price: z.number().min(0, "price must be  0 or greater"),
+  totalTickets: z.number().min(1, "total tickets must be 1 or greater"),
+  category: z.enum(
+    [
+      EVENT_CATEGORIES.MUSIC,
+      EVENT_CATEGORIES.SPORTS,
+      EVENT_CATEGORIES.ART,
+      EVENT_CATEGORIES.FILM,
+      EVENT_CATEGORIES.FOOD,
+      EVENT_CATEGORIES.CONFERENCE,
+      EVENT_CATEGORIES.WORKSHOP,
+      EVENT_CATEGORIES.OTHER,
+    ],
+    {
+      errorMap: () => ({
+        message: "Please select a valid category",
+      }),
     }
+  ),
+});
 
-    interface EventFormProps {
-        mode: "create" | "edit";
-        initialData?: InitialEventData;
-    }
-const EventForm = ({mode, initialData}: EventFormProps) => {
+type FormData = z.infer<typeof formSchema>;
 
-    const { user } = useUser();
-    const createEvent = useMutation(api.events.create);
-    const updateEvent = useMutation(api.events.updateEvent);
-    const router = useRouter();
-    const [isPending, startTransition] = useTransition();
-    const { toast } = useToast();
-    const currentImageUrl = useStorageUrl(initialData?.imageStorageId);
+interface InitialEventData {
+  _id: Id<"events">;
+  name: string;
+  description: string;
+  location: string;
+  eventDate: number;
+  price: number;
+  totalTickets: number;
+  imageStorageId?: Id<"_storage">;
+  category?: string;
+}
 
+interface EventFormProps {
+  mode: "create" | "edit";
+  initialData?: InitialEventData;
+}
+const EventForm = ({ mode, initialData }: EventFormProps) => {
+  const { user } = useUser();
+  const createEvent = useMutation(api.events.create);
+  const updateEvent = useMutation(api.events.updateEvent);
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
+  const currentImageUrl = useStorageUrl(initialData?.imageStorageId);
 
-    // Image upload
+  // Image upload
   const imageInput = useRef<HTMLInputElement>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -87,6 +111,7 @@ const EventForm = ({mode, initialData}: EventFormProps) => {
       eventDate: initialData ? new Date(initialData.eventDate) : new Date(),
       price: initialData?.price ?? 0,
       totalTickets: initialData?.totalTickets ?? 1,
+      category: (initialData?.category as "Music" | "Sports" | "Art" | "Film" | "Food & Drink" | "Conference" | "Workshop" | "Other") ?? EVENT_CATEGORIES.OTHER,
     },
   });
 
@@ -118,6 +143,7 @@ const EventForm = ({mode, initialData}: EventFormProps) => {
             ...values,
             userId: user.id,
             eventDate: values.eventDate.getTime(),
+            category: values.category,
           });
 
           if (imageStorageId) {
@@ -139,6 +165,7 @@ const EventForm = ({mode, initialData}: EventFormProps) => {
             eventId: initialData._id,
             ...values,
             eventDate: values.eventDate.getTime(),
+            category: values.category,
           });
 
           // Update image - this will now handle both adding new image and removing existing image
@@ -211,6 +238,30 @@ const EventForm = ({mode, initialData}: EventFormProps) => {
                 <FormLabel>Event Name</FormLabel>
                 <FormControl>
                   <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="category"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Category</FormLabel>
+                <FormControl>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger >
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.values(EVENT_CATEGORIES).map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -345,7 +396,7 @@ const EventForm = ({mode, initialData}: EventFormProps) => {
                 </div>
               ) : (
                 <input
-                  title='Upload Event Image'
+                  title="Upload Event Image"
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
@@ -381,6 +432,6 @@ const EventForm = ({mode, initialData}: EventFormProps) => {
       </form>
     </Form>
   );
-}
+};
 
 export default EventForm;

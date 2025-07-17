@@ -6,9 +6,31 @@ import React from 'react'
 import Spinner from './Spinner'
 import { CalendarDays, Ticket } from 'lucide-react'
 import EventCard from './EventCard'
+import { EVENT_CATEGORIES } from '@/convex/constants'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+
+type CategoryType = "Music" | "Sports" | "Art" | "Film" | "Food & Drink" | "Conference" | "Workshop" | "Other" | undefined;
+
+type SortByType = "price_asc" | "price_desc" | "date_asc" | "date_desc" | undefined;
+
 
 const EventList = () => {
-    const events = useQuery(api.events.get)
+
+  const [filters, setFilters ] = React.useState({
+    category: undefined as CategoryType,
+    sortBy: undefined as SortByType,
+  })
+    const events = useQuery(api.events.get, {
+      category: filters.category,
+      sortBy: filters.sortBy,
+    })
     
     if (!events) {
         return (
@@ -26,6 +48,20 @@ const EventList = () => {
         .filter((event) => event.eventDate <= Date.now())
         .sort((a,b) => b.eventDate - a.eventDate)
 
+   const handleCategoryChange = (value: string) => {
+  setFilters({ 
+    ...filters, 
+    category: (value || undefined) as CategoryType 
+  });
+};
+
+ const handleSortChange = (value: string) => {
+  setFilters({ 
+    ...filters, 
+    sortBy: (value || undefined) as SortByType 
+  });
+};
+
   return (
     <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>
       
@@ -41,6 +77,42 @@ const EventList = () => {
             <span className='font=medium'>{upcomingEvents.length} Upcoming Events</span>
           </div>
         </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex gap-4 mb-6">
+        <Select
+        
+          onValueChange={handleCategoryChange}
+          value={filters.category || ""}
+         
+        ><SelectTrigger>
+          <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.values(EVENT_CATEGORIES).map((cat) => (
+              <SelectItem key={cat} value={cat}>
+                {cat}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        
+        </Select>
+        <Select
+          onValueChange={handleSortChange}
+          value={filters.sortBy || ""}
+          
+        >
+          <SelectTrigger>
+          <SelectValue placeholder="Sort By" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="price_asc">Price: Low to High</SelectItem>
+            <SelectItem value="price_desc">Price: High to Low</SelectItem>
+            <SelectItem value="date_asc">Date: Oldest First</SelectItem>
+            <SelectItem value="date_desc">Date: Newest First</SelectItem>
+        </SelectContent>
+        </Select>
       </div>
 
       {/**Upcoming events grid */}

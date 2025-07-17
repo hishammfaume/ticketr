@@ -1,11 +1,17 @@
 //import { rateLimiter } from "@convex-dev/rate-limiter/convex.config";
-import { Check } from "lucide-react";
+
 
 import { query, mutation } from "./_generated/server";
-import { ConvexError, v } from "convex/values";
-import { DURATIONS, TICKET_STATUS, WAITING_LIST_STATUS } from "./constants";
+import { v } from "convex/values";
+import {
+  DURATIONS,
+  TICKET_STATUS,
+  WAITING_LIST_STATUS,
+  EVENT_CATEGORIES,
+} from "./constants";
 import { internal } from "./_generated/api";
 import { processQueue } from "./waitingList";
+
 
 export type Metrics = {
   soldTickets: number;
@@ -23,6 +29,16 @@ export const updateEvent = mutation({
     eventDate: v.number(),
     price: v.number(),
     totalTickets: v.number(),
+    category: v.union(
+      v.literal(EVENT_CATEGORIES.MUSIC),
+      v.literal(EVENT_CATEGORIES.SPORTS),
+      v.literal(EVENT_CATEGORIES.ART),
+      v.literal(EVENT_CATEGORIES.FILM),
+      v.literal(EVENT_CATEGORIES.FOOD),
+      v.literal(EVENT_CATEGORIES.CONFERENCE),
+      v.literal(EVENT_CATEGORIES.WORKSHOP),
+      v.literal(EVENT_CATEGORIES.OTHER)
+    ),
   },
   handler: async (ctx, args) => {
     const { eventId, ...updates } = args;
@@ -58,7 +74,17 @@ export const create = mutation({
     eventDate: v.number(),
     price: v.number(),
     totalTickets: v.number(),
-    userId: v.string()
+    userId: v.string(),
+    category: v.union(
+      v.literal(EVENT_CATEGORIES.MUSIC),
+      v.literal(EVENT_CATEGORIES.SPORTS),
+      v.literal(EVENT_CATEGORIES.ART),
+      v.literal(EVENT_CATEGORIES.FILM),
+      v.literal(EVENT_CATEGORIES.FOOD),
+      v.literal(EVENT_CATEGORIES.CONFERENCE),
+      v.literal(EVENT_CATEGORIES.WORKSHOP),
+      v.literal(EVENT_CATEGORIES.OTHER)
+    ),
   },
   handler: async (ctx, args) => {
     const eventId = await ctx.db.insert("events", {
@@ -68,12 +94,15 @@ export const create = mutation({
       eventDate: args.eventDate,
       price: args.price,
       totalTickets: args.totalTickets,
-      userId: args.userId
+      userId: args.userId,
+      category: args.category,
     });
-    return eventId
-  }
-})
+    return eventId;
+  },
+});
 
+// old get query
+/*
 export const get = query({
   args: {},
   handler: async (ctx) => {
@@ -81,6 +110,78 @@ export const get = query({
       .query("events")
       .filter((q) => q.eq(q.field("is_cancelled"), undefined))
       .collect();
+  },
+});
+
+*/
+
+//new get query
+
+export const get = query({
+  args: {
+    category: v.optional(
+      v.union(
+        v.literal(EVENT_CATEGORIES.MUSIC),
+        v.literal(EVENT_CATEGORIES.FOOD),
+        v.literal(EVENT_CATEGORIES.CONFERENCE),
+        v.literal(EVENT_CATEGORIES.WORKSHOP),
+        v.literal(EVENT_CATEGORIES.ART),
+        v.literal(EVENT_CATEGORIES.FILM),
+        v.literal(EVENT_CATEGORIES.SPORTS),
+        v.literal(EVENT_CATEGORIES.OTHER)
+      )
+    ),
+    sortBy: v.optional(
+      v.union(
+        v.literal("price_asc"),
+        v.literal("price_desc"),
+        v.literal("date_asc"),
+        v.literal("date_desc")
+      )
+    ),
+  },
+  handler: async (ctx, { category, sortBy }) => {
+    let eventsQuery = ctx.db
+      .query("events")
+      .filter((q) => q.eq(q.field("is_cancelled"), undefined));
+
+    if (category) {
+      eventsQuery = eventsQuery.filter((q) => q.eq(q.field("category"), category));
+    }
+
+    let events = await eventsQuery.collect();
+
+    // Apply sorting
+    if (sortBy) {
+      events = events.sort((a, b) => {
+        switch (sortBy) {
+          case "price_asc":
+            return a.price - b.price;
+          case "price_desc":
+            return b.price - a.price;
+          case "date_asc":
+            return a.eventDate - b.eventDate;
+          case "date_desc":
+            return b.eventDate - a.eventDate;
+          default:
+            return 0;
+        }
+      });
+    }
+
+    // Fetch user details for each event
+    return await Promise.all(
+      events.map(async (event) => {
+        const user = await ctx.db
+          .query("users")
+          .filter((q) => q.eq(q.field("_id"), event.userId))
+          .first();
+        return {
+          ...event,
+          user: user ? { id: user._id, name: user.name || user.email } : null,
+        };
+      })
+    );
   },
 });
 
@@ -261,7 +362,6 @@ export const joinWaitingList = mutation({
   },
 });
 
-
 // Purchase Ticket
 export const purchaseTicket = mutation({
   args: {
@@ -346,12 +446,10 @@ export const purchaseTicket = mutation({
       console.error("Failed to complete ticket purchase:", error);
       throw new Error(`Failed to complete ticket purchase: ${error}`);
     }
-  
   },
-  });
+});
 
-
-  //get users ticket wuth event info
+//get users ticket wuth event info
 export const getUserTickets = query({
   args: { userId: v.string() },
   handler: async (ctx, { userId }) => {
@@ -377,7 +475,21 @@ export const getUserTickets = query({
 });
 
 export const search = query({
-  args: { searchTerm: v.string() },
+  args: {
+    searchTerm: v.string(),
+    category: v.optional(
+      v.union(
+        v.literal(EVENT_CATEGORIES.MUSIC),
+        v.literal(EVENT_CATEGORIES.SPORTS),
+        v.literal(EVENT_CATEGORIES.ART),
+        v.literal(EVENT_CATEGORIES.FILM),
+        v.literal(EVENT_CATEGORIES.FOOD),
+        v.literal(EVENT_CATEGORIES.CONFERENCE),
+        v.literal(EVENT_CATEGORIES.WORKSHOP),
+        v.literal(EVENT_CATEGORIES.OTHER)
+      )
+    ),
+  },
   handler: async (ctx, { searchTerm }) => {
     const events = await ctx.db
       .query("events")
@@ -389,9 +501,32 @@ export const search = query({
       return (
         event.name.toLowerCase().includes(searchTermLower) ||
         event.description.toLowerCase().includes(searchTermLower) ||
-        event.location.toLowerCase().includes(searchTermLower)
+        event.location.toLowerCase().includes(searchTermLower) ||
+        event.category.toLowerCase().includes(searchTermLower)
       );
     });
+  },
+});
+
+export const getByCategory = query({
+  args: {
+    category: v.union(
+      v.literal(EVENT_CATEGORIES.MUSIC),
+      v.literal(EVENT_CATEGORIES.SPORTS),
+      v.literal(EVENT_CATEGORIES.ART),
+      v.literal(EVENT_CATEGORIES.FILM),
+      v.literal(EVENT_CATEGORIES.FOOD),
+      v.literal(EVENT_CATEGORIES.CONFERENCE),
+      v.literal(EVENT_CATEGORIES.WORKSHOP),
+      v.literal(EVENT_CATEGORIES.OTHER)
+    ),
+  },
+  handler: async (ctx, { category }) => {
+    return await ctx.db
+      .query("events")
+      .withIndex("by_category", (q) => q.eq("category", category))
+      .filter((q) => q.eq(q.field("is_cancelled"), undefined))
+      .collect();
   },
 });
 

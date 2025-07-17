@@ -9,6 +9,7 @@ import {
   CalendarDays,
   Check,
   CircleArrowRight,
+  CircleUser,
   LoaderCircle,
   MapPin,
   PencilIcon,
@@ -20,12 +21,34 @@ import {
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import PurchaseTicket from "./PurchaseTicket";
+import { EVENT_CATEGORIES } from "@/convex/constants";
 
 const EventCard = ({ eventId }: { eventId: Id<"events"> }) => {
   const { user } = useUser();
   const router = useRouter();
   const event = useQuery(api.events.getById, { eventId });
   const availability = useQuery(api.events.getEventAvailability, { eventId });
+  const category = event?.category;
+  const eventOwner = useQuery(api.users.getUserById, {
+    userId: event?.userId || "",
+  });
+
+  const categoryColors = {
+    [EVENT_CATEGORIES.FOOD]: "bg-blue-100 text-blue-800",
+    [EVENT_CATEGORIES.CONFERENCE]: "bg-teal-100 text-teal-800",
+    [EVENT_CATEGORIES.WORKSHOP]: "bg-orange-100 text-orange-800",
+    [EVENT_CATEGORIES.ART]: "bg-purple-100 text-purple-800",
+    [EVENT_CATEGORIES.FILM]: "bg-pink-100 text-pink-800",
+    [EVENT_CATEGORIES.SPORTS]: "bg-green-100 text-green-800",
+    [EVENT_CATEGORIES.OTHER]: "bg-gray-100 text-gray-800",
+  };
+
+  const getCategoryColor = (cat: string | undefined) => {
+    if (!cat || !(cat in categoryColors)) {
+      return categoryColors[EVENT_CATEGORIES.OTHER];
+    }
+    return categoryColors[cat as keyof typeof categoryColors];
+  };
 
   const userTicket = useQuery(api.tickets.getUserTicketForEvent, {
     eventId,
@@ -103,7 +126,7 @@ const EventCard = ({ eventId }: { eventId: Id<"events"> }) => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              router.push(`/seller/event/${eventId}/edit`);
+              router.push(`/seller/events/${eventId}/edit`);
             }}
             className="w-full bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors duration-200 shadow-sm flex items-center justify-center gap-2"
           >
@@ -176,7 +199,7 @@ const EventCard = ({ eventId }: { eventId: Id<"events"> }) => {
       {/**Event Details */}
       <div className={`p-6 ${imageUrl ? "relative" : ""}`}>
         <div className="flex justify-between items-start">
-          {/**Event Name and owner badge */}
+          {/**Event Name and owner badge, and User */}
           <div>
             <div className="flex flex-col items-start gap-2">
               {isEventOwner && (
@@ -185,7 +208,16 @@ const EventCard = ({ eventId }: { eventId: Id<"events"> }) => {
                   Your Event
                 </span>
               )}
+              <span
+                className={`items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(category)}`}
+              >
+                {category}
+              </span>
               <h2 className="text-2xl font-bold text-gray-900">{event.name}</h2>
+              <p className="text-sm text-gray-600">
+               
+                Posted by:  <CircleUser className="inline w-4 h-4 mr-1" />{eventOwner?.name || "Unknown User"}
+              </p>
             </div>
             {isPastEvent && (
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 mt-2">
@@ -207,7 +239,7 @@ const EventCard = ({ eventId }: { eventId: Id<"events"> }) => {
             </span>
             {availability.purchasedCount >= availability.totalTickets && (
               <span className="px-4 py-1.5 bg-red-50 text-red-700 font-semibold rounded-full text-sm">
-                Dolf Out
+                Sold Out
               </span>
             )}
           </div>
